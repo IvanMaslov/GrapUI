@@ -9,12 +9,8 @@
 #include <vector>
 #include <queue>
 #include <set>
-#include <string>
 #include <QDir>
 #include <QDirIterator>
-#include <algorithm>
-
-#include <iostream>
 
 class background_grep : public QObject
 {
@@ -23,30 +19,28 @@ public:
     background_grep();
     ~background_grep();
     void stop();
-    void start(std::string home_path, QString grep_string);
+    void start(QString home_path, QString grep_string);
 
     struct grepped_file{
         grepped_file();
-        grepped_file(std::string, size_t, size_t, std::string, std::string, std::string);
+        grepped_file(QString, size_t, size_t, QString);
 
-        const static size_t appendix_size = 15;
+        const static QByteArray::size_type appendix_size = 20;
 
-        std::string file;
+        QString file;
         size_t line;
         size_t pos;
-        std::string before;
-        std::string occurency;
-        std::string after;
+        QString occurency;
 
         QString to_string();
     };
 
     QString patch_result();
 private:
-    void search_in(std::string);
+    void search_in(QString);
 
 private:
-    static const size_t thread_count = 1;
+    static const size_t thread_count = 3;
     std::unique_ptr<std::thread> tasks[thread_count];
     mutable std::mutex res;
     mutable std::mutex arg;
@@ -54,8 +48,8 @@ private:
     std::atomic_bool cancel;
     std::atomic_bool quit;
     QString grep_string;
-    std::queue<std::string> path;
-    mutable std::set<std::string> visited;
+    std::queue<QString> path;
+    mutable std::set<QString> visited;
     std::vector<grepped_file> result;
     size_t peek = 0;
 };

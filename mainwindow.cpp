@@ -8,13 +8,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     connect(ui->pushButton, &QPushButton::clicked, this, [this] {
-        // ui->textBrowser->append("searched: in " + ui->lineEdit->text() + " for " + ui->lineEdit_2->text());
-        job.start(ui->lineEdit->text().toStdString(), ui->lineEdit_2->text());
+        ui->textBrowser->clear();
+        job.start(ui->lineEdit->text(), ui->lineEdit_2->text());
     });
 
     connect(ui->pushButton_2, &QPushButton::clicked, this, [this] {
         ui->textBrowser->clear();
-        // ui->textBrowser->append("cancelled");
         job.stop();
     });
 
