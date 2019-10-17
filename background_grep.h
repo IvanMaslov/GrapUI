@@ -8,12 +8,13 @@
 #include <condition_variable>
 #include <vector>
 #include <queue>
+#include <set>
 #include <string>
-#include <filesystem>
-#include <iostream>
-#include <dirent.h>
 #include <QDir>
 #include <QDirIterator>
+#include <algorithm>
+
+#include <iostream>
 
 class background_grep : public QObject
 {
@@ -22,7 +23,7 @@ public:
     background_grep();
     ~background_grep();
     void stop();
-    void start(std::string home_path);
+    void start(std::string home_path, QString grep_string);
 
     struct grepped_file{
         grepped_file();
@@ -45,14 +46,16 @@ private:
     void search_in(std::string);
 
 private:
-    static const size_t thread_count = 2;
+    static const size_t thread_count = 1;
     std::unique_ptr<std::thread> tasks[thread_count];
     mutable std::mutex res;
     mutable std::mutex arg;
     std::condition_variable cv;
     std::atomic_bool cancel;
     std::atomic_bool quit;
+    QString grep_string;
     std::queue<std::string> path;
+    mutable std::set<std::string> visited;
     std::vector<grepped_file> result;
     size_t peek = 0;
 };

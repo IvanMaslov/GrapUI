@@ -19,7 +19,7 @@ background_grep::background_grep() :
 
                 std::string argument = path.front();
                 path.pop();
-                arg.unlock();
+                lg.unlock();
 
                 search_in(argument);
             }
@@ -43,9 +43,8 @@ void background_grep::stop(){
     cv.notify_all();
 }
 
-void background_grep::start(std::string home_path){
+void background_grep::start(std::string home_path, QString grep_string){
     stop();
-    std::unique_lock<std::mutex> lgarg(arg);
 
     {
         std::unique_lock<std::mutex> lgres(res);
@@ -53,7 +52,12 @@ void background_grep::start(std::string home_path){
         result.clear();
     }
 
-    path.push(home_path);
+    {
+        std::unique_lock<std::mutex> lgarg(arg);
+        this->grep_string = grep_string;
+        visited.clear();
+        path.push(home_path);
+    }
 }
 
 background_grep::grepped_file::grepped_file() {}
@@ -68,19 +72,18 @@ background_grep::grepped_file::grepped_file(std::string file,
     pos(pos),
     before(before),
     occurency(occurency),
-    after(after)
-{
+    after(after){}
 
-}
 QString background_grep::grepped_file::to_string() {
     return QString::fromStdString(file + "::"
             + std::to_string(line) + ":"
             + std::to_string(pos) + "\n..."
-            + before + " **" + occurency + "** " + after + "...\n");
+            + before + " " + occurency + " " + after + "...\n");
 
 }
 
 QString background_grep::patch_result() {
+    std::unique_lock<std::mutex> lgres(res);
     QString ans;
     while(peek < result.size()){
         ans.append(result[peek++].to_string());
@@ -91,32 +94,66 @@ QString background_grep::patch_result() {
 void background_grep::search_in(std::string argument) {
     std::unique_lock<std::mutex> lgres(res);
     std::unique_lock<std::mutex> lgarg(arg);
-/*
-    std::filesystem::path argument_path(argument);
-    if (std::filesystem::is_directory(argument)) {
-        std::cerr << argument;
-        for(auto p : std::filesystem::directory_iterator(argument)){
-            std::cerr << p.path();
-            path.push(p.path());
-        }
-        result.push_back(grepped_file(argument, 1, 2, "directory ", argument, " end"));
-    } else {
-        result.push_back(grepped_file(argument, 3, 4, "file ", argument, " end"));
-    }
-*/
+
+    if (visited.find(argument) != visited.end())
+        return;
+    visited.insert(argument);
     QDir dir(QString::fromStdString(argument));
     if (dir.exists()) {
         QDirIterator directories(QString::fromStdString(argument),
-                             QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+                             QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot | QDir::Readable, QDirIterator::Subdirectories);
         while(directories.hasNext()){
             directories.next();
-            if(directories.filePath().toStdString() == argument)
-                continue;
-            std::cerr << directories.filePath().toStdString() << std::endl;
             path.push(directories.filePath().toStdString());
         }
-        result.push_back(grepped_file(argument, 1, 2, "directory ", argument, " end"));
     } else {
-        result.push_back(grepped_file(argument, 3, 4, "file ", argument, " end"));
+        QString occurency = grep_string;
+        lgarg.unlock();
+        lgres.unlock();
+        std::vector<grepped_file> current_result;
+        // current_result.push_back(grepped_file(argument, 0, 0, "file:", argument, " \n"));
+        QFile file(QString::fromStdString(argument));
+        file.open(QFile::ReadOnly);
+        for (size_t line = 0; !file.atEnd(); ++line) {
+            if(cancel.load()) return;
+            QByteArray bytes = file.readLine();
+            QString before;
+            QString after;
+            int pos = 0;
+            while (pos != -1) {
+                if(cancel.load()) return;
+                pos = bytes.indexOf(occurency, pos);
+                if (pos != -1) {
+                    size_t before_begin = pos;
+                    size_t before_size = 0;
+                    if (before_begin >= grepped_file::appendix_size){
+                        before_size = grepped_file::appendix_size;
+                    }
+                    else {
+                        before_size = pos;
+                    }
+                    before_begin -= grepped_file::appendix_size;
+
+                    size_t after_begin = pos + occurency.size();
+                    size_t after_size = grepped_file::appendix_size;
+                    if (after_begin + after_size > bytes.length() ){
+                        after_size = bytes.length() - after_begin;
+                    }
+
+                    current_result.push_back(grepped_file(
+                                                 argument,
+                                                 line,
+                                                 pos,
+                                                 bytes.mid(before_begin, before_size).toStdString(),
+                                                 occurency.toStdString(),
+                                                 bytes.mid(after_begin, after_size).toStdString()
+                                                 ));
+                    pos += occurency.size();
+                }
+            }
+        }
+        lgres.lock();
+        for (auto i : current_result)
+            result.push_back(i);
     }
 }
