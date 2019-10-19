@@ -28,7 +28,6 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     background_grep.cpp \
-    grep_task.cpp \
     task_executor.cpp \
     grep_job.cpp
 
@@ -37,7 +36,6 @@ HEADERS += \
     background_grep.h \
     background_grep.h \
     abstract_task.h \
-    grep_task.h \
     abstract_job.h \
     task_executor.h \
     grep_job.h

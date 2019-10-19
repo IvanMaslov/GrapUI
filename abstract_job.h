@@ -9,18 +9,19 @@
 class abstract_job
 {
 public:
-    abstract_job(task_executor&);
-    virtual ~abstract_job();
-    virtual void start();
-    virtual void stop();
-    bool shutdown() { return cancelled || executor.shutdown(); }
-    void run_subtask(abstract_task task) { executor.schedule(task); }
-    void run_subtasks(abstract_task task) { executor.schedule(task); }
-private:
+    abstract_job(task_executor& te) : executor(te) {}
+    virtual ~abstract_job() { stop(); }
+    virtual void start() = 0;
+    void stop() { cancelled.store(true); }
+    bool is_shutdown() { return cancelled || executor.is_shutdown(); }
+protected:
+    void run_subtask(std::shared_ptr<abstract_task> task) { executor.schedule(task); }
+    void run_subtasks(std::vector<std::shared_ptr<abstract_task>> task) { executor.schedule(task); }
+
     mutable std::mutex res;
     std::atomic_bool started = false;
     std::atomic_bool cancelled = false;
-
+private:
     task_executor& executor;
 };
 

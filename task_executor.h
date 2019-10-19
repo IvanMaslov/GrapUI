@@ -19,8 +19,8 @@ class task_executor : public QObject
 public:
     task_executor();
     ~task_executor();
-    void schedule(abstract_task);
-    void schedule(std::vector<abstract_task>);
+    void schedule(std::shared_ptr<abstract_task>);
+    void schedule(std::vector<std::shared_ptr<abstract_task>>);
     bool is_shutdown() const { return quit.load(); }
 private:
     static const size_t thread_count = 3;
@@ -31,7 +31,7 @@ private:
 
     std::condition_variable cv;
     std::atomic_bool quit;
-    std::queue<abstract_task> tasks;
+    std::queue<std::shared_ptr<abstract_task>> tasks;
 };
 
 #endif // BACKGROUND_JOB_H

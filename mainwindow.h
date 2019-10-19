@@ -3,7 +3,8 @@
 
 #include <QMainWindow>
 #include <QTimer>
-#include "background_grep.h"
+#include "task_executor.h"
+#include "grep_job.h"
 
 namespace Ui {
 class MainWindow;
@@ -19,7 +20,8 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    task_executor job;
+    task_executor processor;
+    grep_job* job = nullptr;
     QTimer timer;
 };
 
