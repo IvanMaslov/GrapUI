@@ -1,12 +1,12 @@
 #include "task_executor.h"
 
-task_executor::task_executor() :
-    quit(false)
-{
+void task_executor::start() {
+    if(is_working()) return;
+    working.store(true);
+
     for(size_t i = 0; i < thread_count; ++i){
-        executors[i] = std::move(
-                std::unique_ptr<std::thread>(
-                        new std::thread([this] {
+        executors[i].release();
+        executors[i].reset( new std::thread([this] {
             while(true) {
                 std::unique_lock<std::mutex> lg(pool);
                 cv.wait(lg, [this] {
@@ -18,24 +18,40 @@ task_executor::task_executor() :
                 std::shared_ptr<abstract_task> argument = tasks.front();
                 tasks.pop();
                 lg.unlock();
-
-                argument->execute();
+                try {
+                    argument->execute();
+                } catch (std::exception e) {
+                    ;// ignore
+                }
             }
-        })));
+        }));
     }
 }
 
-task_executor::~task_executor() {
-    quit.store(true);
+void task_executor::finish() {
+    if(is_shutdown()) return;
+    working.store(false);
+
+    {
+        std::lock_guard<std::mutex> lg(pool);
+        while(!tasks.empty())
+            tasks.pop();
+    }
     cv.notify_all();
-    for(size_t i = 0; i < thread_count; ++i)
+    for(size_t i = 0; i < thread_count; ++i) {
         executors[i]->join();
+        executors[i].reset(nullptr);
+    }
 }
 
 void task_executor::schedule(std::shared_ptr<abstract_task> task) {
     std::unique_lock<std::mutex> lg(pool);
     tasks.push(task);
     cv.notify_one();
+    if (tasks.size() > task_limit) {
+        finish();
+        throw std::runtime_error("Too much tasks");
+    }
 }
 
 void task_executor::schedule(std::vector<std::shared_ptr<abstract_task>> task) {
@@ -43,4 +59,9 @@ void task_executor::schedule(std::vector<std::shared_ptr<abstract_task>> task) {
     for (std::shared_ptr t : task)
         tasks.push(t);
     cv.notify_all();
+    if (tasks.size() > task_limit) {
+        lg.unlock();
+        finish();
+        throw std::runtime_error("Too much tasks");
+    }
 }

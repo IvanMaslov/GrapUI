@@ -2,9 +2,8 @@
 
 grep_job::grep_job(task_executor& te, QString path, QString occurency)
     : abstract_job (te),
-      start_path(path),
-      occurency(occurency)
-{}
+      occurency(occurency),
+      start_path(path){}
 
 void grep_job::start() {
     run_subtask(std::shared_ptr<abstract_task>(new grep_task(*this, start_path)));
@@ -36,6 +35,16 @@ QString grep_job::patch_result() {
     return ans;
 }
 
+void grep_job::append_result(std::vector<grepped_file> current_result) {
+    std::unique_lock<std::mutex> lg(res);
+    if(result.size() > result_limit) {
+        stop();
+        throw std::runtime_error("Too large output");
+    }
+    for (auto i : current_result)
+        result.push_back(i);
+}
+
 grep_job::grep_task::grep_task(grep_job& job, QString path)
     :path(path), job(job){}
 
@@ -65,9 +74,11 @@ void grep_job::grep_task::execute() {
         }
         job.run_subtasks(subfolders);
     } else {
+        if (!QFile::exists(path))
+            return;
         std::vector<grepped_file> current_result;
         QFile file(path);
-        file.open(QFile::ReadOnly);
+        file.open(QFile::ReadOnly | QFile::Text);
         for (size_t line = 0; !file.atEnd(); ++line) {
             if(job.is_shutdown()) return;
             QByteArray bytes = file.readLine();
@@ -92,10 +103,6 @@ void grep_job::grep_task::execute() {
                 }
             }
         }
-        {
-            std::unique_lock<std::mutex> lg(job.res);
-            for (auto i : current_result)
-                job.result.push_back(i);
-        }
+        job.append_result(current_result);
     }
 }

@@ -17,20 +17,25 @@ class task_executor : public QObject
 {
     Q_OBJECT
 public:
-    task_executor();
-    ~task_executor();
+    task_executor() : working(false) { start(); }
+    ~task_executor() { finish(); }
+    void start();
+    void finish();
     void schedule(std::shared_ptr<abstract_task>);
     void schedule(std::vector<std::shared_ptr<abstract_task>>);
-    bool is_shutdown() const { return quit.load(); }
+    bool is_shutdown() const { return !working.load(); }
+    bool is_working() const { return working.load(); }
+    size_t sheduled_tasks() { return tasks.size(); }
 private:
-    static const size_t thread_count = 3;
+    static const size_t thread_count = 5;
+    static const size_t task_limit = 200000;
 
     std::unique_ptr<std::thread> executors[thread_count];
 
     mutable std::mutex pool;
 
     std::condition_variable cv;
-    std::atomic_bool quit;
+    std::atomic_bool working;
     std::queue<std::shared_ptr<abstract_task>> tasks;
 };
 

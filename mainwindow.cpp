@@ -18,13 +18,15 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     connect(ui->pushButton_2, &QPushButton::clicked, this, [this] {
-        ui->textBrowser->clear();
+        processor.start();
         if(job == nullptr)
             return;
         job->stop();
+        job->patch_result();
+        ui->textBrowser->clear();
     });
 
-    timer.setInterval(200);
+    timer.setInterval(100);
     timer.start();
     connect(&timer, &QTimer::timeout, this, [this]{
         if(job == nullptr)
@@ -33,6 +35,10 @@ MainWindow::MainWindow(QWidget *parent) :
         if(responce.isEmpty())
             return;
         ui->textBrowser->append(responce);
+    });
+
+    connect(&timer, &QTimer::timeout, this, [this]{
+        ui->lcdNumber->display(static_cast<int>(processor.sheduled_tasks()));
     });
 }
 

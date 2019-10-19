@@ -15,7 +15,17 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="2">
+    <item row="2" column="1">
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="text">
+       <string>Cancel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="3" alignment="Qt::AlignHCenter">
+     <widget class="QLCDNumber" name="lcdNumber"/>
+    </item>
+    <item row="0" column="0" colspan="4">
      <widget class="QLineEdit" name="lineEdit"/>
     </item>
     <item row="2" column="0">
@@ -25,7 +35,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0" colspan="2">
+    <item row="1" column="0" colspan="4">
+     <widget class="QLineEdit" name="lineEdit_2"/>
+    </item>
+    <item row="3" column="0" colspan="4">
      <widget class="QTextBrowser" name="textBrowser">
       <property name="html">
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -36,15 +49,12 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="pushButton_2">
+    <item row="2" column="2" alignment="Qt::AlignRight">
+     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Cancel</string>
+       <string>Current tasks:</string>
       </property>
      </widget>
-    </item>
-    <item row="1" column="0" colspan="2">
-     <widget class="QLineEdit" name="lineEdit_2"/>
     </item>
    </layout>
   </widget>

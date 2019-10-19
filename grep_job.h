@@ -40,9 +40,13 @@ public:
 
 
     QString patch_result();
+    void append_result(std::vector<grepped_file>);
 private:
-    QString start_path;
+    static const size_t result_limit = 20000;
+
     const QString occurency;
+    const QString start_path;
+
     std::set<QString> visited;
     std::vector<grepped_file> result;
     size_t peek = 0;
