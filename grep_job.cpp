@@ -51,8 +51,7 @@ grep_job::grep_task::grep_task(grep_job& job, QString path)
 grep_job::grep_task::~grep_task() {}
 
 void grep_job::grep_task::execute() {
-    if (job.is_shutdown())
-        return;
+    if (job.is_shutdown()) return;
     {
         std::unique_lock<std::mutex> lgres(job.res);
         if (job.visited.find(path) != job.visited.end())
@@ -69,13 +68,17 @@ void grep_job::grep_task::execute() {
                                      | QDir::Readable,
                                  QDirIterator::Subdirectories);
         while(directories.hasNext()){
+            if(job.is_shutdown()) return;
             directories.next();
             subfolders.push_back(std::shared_ptr<abstract_task>(new grep_task(job, directories.filePath())));
         }
-        job.run_subtasks(subfolders);
+        {
+            std::lock_guard<std::mutex> lg(job.atomic_update);
+            if(job.is_shutdown()) return;
+            job.run_subtasks(subfolders);
+        }
     } else {
-        if (!QFile::exists(path))
-            return;
+        if (!QFile::exists(path)) return;
         std::vector<grepped_file> current_result;
         QFile file(path);
         file.open(QFile::ReadOnly | QFile::Text);
@@ -103,6 +106,10 @@ void grep_job::grep_task::execute() {
                 }
             }
         }
-        job.append_result(current_result);
+        {
+            std::lock_guard<std::mutex> lg(job.atomic_update);
+            if(job.is_shutdown()) return;
+            job.append_result(current_result);
+        }
     }
 }

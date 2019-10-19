@@ -19,7 +19,6 @@ protected:
     void run_subtasks(std::vector<std::shared_ptr<abstract_task>> task) { executor.schedule(task); }
 
     mutable std::mutex res;
-    std::atomic_bool started = false;
     std::atomic_bool cancelled = false;
 private:
     task_executor& executor;

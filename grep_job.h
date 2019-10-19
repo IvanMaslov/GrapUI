@@ -24,7 +24,7 @@ public:
     struct grepped_file{
         grepped_file(QString, size_t, size_t, QString);
 
-        const static QByteArray::size_type appendix_size = 20;
+        const static QByteArray::size_type appendix_size = 10;
 
         QString file;
         size_t line;
@@ -42,10 +42,12 @@ public:
     QString patch_result();
     void append_result(std::vector<grepped_file>);
 private:
-    static const size_t result_limit = 20000;
+    static const size_t result_limit = 10000;
 
     const QString occurency;
     const QString start_path;
+
+    mutable std::mutex atomic_update;
 
     std::set<QString> visited;
     std::vector<grepped_file> result;

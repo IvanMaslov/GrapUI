@@ -28,11 +28,12 @@ public:
     size_t sheduled_tasks() { return tasks.size(); }
 private:
     static const size_t thread_count = 5;
-    static const size_t task_limit = 200000;
+    static const size_t task_limit = 50000;
 
     std::unique_ptr<std::thread> executors[thread_count];
 
     mutable std::mutex pool;
+    mutable std::mutex reboot;
 
     std::condition_variable cv;
     std::atomic_bool working;
