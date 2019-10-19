@@ -19,7 +19,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    background_grep job;
+    task_executor job;
     QTimer timer;
 };
 
