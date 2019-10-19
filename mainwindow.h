@@ -21,7 +21,7 @@ public:
 private:
     Ui::MainWindow *ui;
     task_executor processor;
-    grep_job* job = nullptr;
+    std::shared_ptr<grep_job> job = nullptr;
     QTimer timer;
 };
 

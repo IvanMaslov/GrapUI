@@ -14,9 +14,9 @@ public:
     {
     private:
         QString path;
-        grep_job& job;
+        std::shared_ptr<grep_job> job;
     public:
-        grep_task(grep_job&, QString);
+        grep_task(std::shared_ptr<grep_job>, QString);
         ~grep_task() override;
         void execute() override;
     };
@@ -34,20 +34,17 @@ public:
         QString to_string();
     };
 
-
     grep_job(task_executor&, QString path, QString occurency);
     void start() override;
 
-
     QString patch_result();
+protected:
     void append_result(std::vector<grepped_file>);
 private:
-    static const size_t result_limit = 10000;
+    static const size_t result_limit = 100000;
 
     const QString occurency;
     const QString start_path;
-
-    mutable std::mutex atomic_update;
 
     std::set<QString> visited;
     std::vector<grepped_file> result;

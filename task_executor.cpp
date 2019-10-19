@@ -1,16 +1,20 @@
 #include "task_executor.h"
 
+#include <iostream>
+
 void task_executor::start() {
     std::lock_guard<std::mutex> LG(reboot);
     if(is_working()) return;
-    working.store(true);
+    std::cerr << "START EXECUTOR: " << std::endl;
     {
         std::lock_guard<std::mutex> lg(pool);
         while(!tasks.empty())
             tasks.pop();
     }
+    working.store(true);
     for(size_t i = 0; i < thread_count; ++i){
-        executors[i].reset( new std::thread([this] {
+        executors[i].reset(new std::thread([this] {
+            std::cerr << "START THREAD: " << std::endl;
             while(true) {
                 std::unique_lock<std::mutex> lg(pool);
                 cv.wait(lg, [this] {
@@ -25,6 +29,7 @@ void task_executor::start() {
                 try {
                     argument->execute();
                 } catch (const std::exception& e) {
+                    std::cerr << "ERROR: *" << std::endl;
                     ;// ignore
                 }
             }
@@ -35,6 +40,7 @@ void task_executor::start() {
 void task_executor::finish() {
     std::lock_guard<std::mutex> LG(reboot);
     if(is_shutdown()) return;
+    std::cerr << "FINISH EXECUTOR: " << std::endl;
     working.store(false);
     {
         std::lock_guard<std::mutex> lg(pool);
@@ -44,6 +50,8 @@ void task_executor::finish() {
     cv.notify_all();
     for(size_t i = 0; i < thread_count; ++i) {
         executors[i]->join();
+        executors[i].reset();
+        std::cerr << "FINISH THREAD: " << std::endl;
     }
 }
 
@@ -52,6 +60,7 @@ void task_executor::schedule(std::shared_ptr<abstract_task> task) {
     tasks.push(task);
     cv.notify_one();
     if (tasks.size() > task_limit) {
+        std::cerr << "ERROR: shedule1" << std::endl;
         lg.unlock();
         finish();
         throw std::runtime_error("Too much tasks");
@@ -64,6 +73,7 @@ void task_executor::schedule(std::vector<std::shared_ptr<abstract_task>> task) {
         tasks.push(t);
     cv.notify_all();
     if (tasks.size() > task_limit) {
+        std::cerr << "ERROR: shedule2" << std::endl;
         lg.unlock();
         finish();
         throw std::runtime_error("Too much tasks");

@@ -28,7 +28,7 @@ public:
     size_t sheduled_tasks() { return tasks.size(); }
 private:
     static const size_t thread_count = 5;
-    static const size_t task_limit = 50000;
+    static const size_t task_limit = 500000;
 
     std::unique_ptr<std::thread> executors[thread_count];
 
