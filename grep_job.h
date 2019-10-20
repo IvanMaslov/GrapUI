@@ -6,6 +6,7 @@
 #include <set>
 #include <QDir>
 #include <QDirIterator>
+#include <QDebug>
 
 class grep_job : public abstract_job
 {
@@ -36,8 +37,10 @@ public:
 
     grep_job(task_executor&, QString path, QString occurency);
     void start() override;
+    static void start(std::shared_ptr<grep_job>);
 
     QString patch_result();
+
 protected:
     void append_result(std::vector<grepped_file>);
 private:
@@ -49,6 +52,7 @@ private:
     std::set<QString> visited;
     std::vector<grepped_file> result;
     size_t peek = 0;
+
 };
 
 #endif // GREP_JOB_H

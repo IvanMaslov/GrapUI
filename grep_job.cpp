@@ -6,9 +6,13 @@ grep_job::grep_job(task_executor& te, QString path, QString occurency)
       start_path(path){}
 
 void grep_job::start() {
-    run_subtask(std::shared_ptr<abstract_task>(
-                    new grep_task(std::shared_ptr<grep_job>(this), start_path)));
+    run_subtask(std::make_shared<grep_task>(std::shared_ptr<grep_job>(this), start_path));
 }
+
+void grep_job::start(std::shared_ptr<grep_job> job) {
+    job->run_subtask(std::make_shared<grep_task>(job, job->start_path));
+}
+
 
 grep_job::grepped_file::grepped_file(QString file,
              size_t line,
@@ -27,7 +31,7 @@ QString grep_job::grepped_file::to_string() {
 }
 
 QString grep_job::patch_result() {
-    std::unique_lock<std::mutex> lgres(res);
+    std::lock_guard<std::mutex> lg(res);
     QString ans;
     while(peek < result.size()){
         ans.append(result[peek++].to_string());
@@ -38,8 +42,8 @@ QString grep_job::patch_result() {
 void grep_job::append_result(std::vector<grepped_file> current_result) {
     if(result.size() > result_limit) {
         stop();
-        // ignore
-        return;
+        qDebug() << "ERROR: LARGE ANSWER";
+        throw std::runtime_error("Too large result");
     }
     for (auto i : current_result)
         result.push_back(i);
@@ -51,11 +55,10 @@ grep_job::grep_task::grep_task(std::shared_ptr<grep_job> job, QString path)
 grep_job::grep_task::~grep_task() {}
 
 void grep_job::grep_task::execute() {
-    if (job->is_shutdown()) return;
     {
         std::lock_guard<std::mutex> lg(job->res);
-        if (job->visited.find(path) != job->visited.end())
-            return;
+        if (job->is_shutdown()) return;
+        if (job->visited.find(path) != job->visited.end()) return;
         job->visited.insert(path);
     }
     QDir dir(path);
@@ -70,7 +73,7 @@ void grep_job::grep_task::execute() {
         while(directories.hasNext()){
             if(job->is_shutdown()) return;
             directories.next();
-            subfolders.push_back(std::shared_ptr<abstract_task>(new grep_task(job, directories.filePath())));
+            subfolders.push_back(std::make_shared<grep_task>(job, directories.filePath()));
         }
         {
             std::lock_guard<std::mutex> lg(job->res);
@@ -90,10 +93,10 @@ void grep_job::grep_task::execute() {
                 if(job->is_shutdown()) return;
                 pos = bytes.indexOf(job->occurency, pos);
                 if (pos != -1) {
-                    int occurency_from = pos - grepped_file::appendix_size < 0
+                    QByteArray::size_type occurency_from = pos < grepped_file::appendix_size
                             ? 0
                             : pos - grepped_file::appendix_size;
-                    int occurency_to = pos + grepped_file::appendix_size + job->occurency.length() > bytes.length()
+                    QByteArray::size_type occurency_to = pos + grepped_file::appendix_size + job->occurency.length() > bytes.length()
                             ? bytes.length()
                             : pos + grepped_file::appendix_size + job->occurency.length();
                     current_result.push_back(grepped_file(

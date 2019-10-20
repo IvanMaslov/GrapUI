@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -9,28 +8,20 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     connect(ui->pushButton, &QPushButton::clicked, this, [this] {
-        std::cerr << "JOB-: " << (job.get()) << std::endl;
-        if(job != nullptr){
-            job->stop();
-        }
+        if(job != nullptr) job->stop();
         ui->textBrowser->clear();
-        job.reset(new grep_job(processor, ui->lineEdit->text(), ui->lineEdit_2->text()));
-        std::cerr << "JOB+: " << (job.get()) << std::endl;
-        std::cerr << "START:-" << std::endl;
-        job->start();
-        std::cerr << "START:+" << std::endl;
+        job = std::make_shared<grep_job>(processor, ui->lineEdit->text(), ui->lineEdit_2->text());
+        try {
+            grep_job::start(job);
+        } catch (const std::runtime_error& e) {
+            if(processor.is_shutdown()) processor.restart();
+        }
     });
 
     connect(ui->pushButton_2, &QPushButton::clicked, this, [this] {
-        std::cerr << "PROCESSOR:-" << std::endl;
-        processor.start();
-        std::cerr << "PROCESSOR:+" << std::endl;
-        std::cerr << "JOB: " << (job.get()) << std::endl;
-        if(job == nullptr)
-            return;
-        std::cerr << "STOP:-" << std::endl;
+        if(processor.is_shutdown()) processor.restart();
+        if(job == nullptr) return;
         job->stop();
-        std::cerr << "STOP:+" << std::endl;
         job->patch_result();
         ui->textBrowser->clear();
         job.reset();
