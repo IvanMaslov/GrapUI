@@ -42,9 +42,10 @@ public:
     QString patch_result();
 
 protected:
-    void append_result(std::vector<grepped_file>);
+    void append_result(const std::vector<grepped_file>&);
 private:
     static const size_t result_limit = 100000;
+    static const QByteArray::size_type patch_limit = 100000;
 
     const QString occurency;
     const QString start_path;

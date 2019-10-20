@@ -6,11 +6,11 @@ grep_job::grep_job(task_executor& te, QString path, QString occurency)
       start_path(path){}
 
 void grep_job::start() {
-    run_subtask(std::make_shared<grep_task>(std::shared_ptr<grep_job>(this), start_path));
+    run_subtask(std::make_unique<grep_task>(std::shared_ptr<grep_job>(this), start_path));
 }
 
 void grep_job::start(std::shared_ptr<grep_job> job) {
-    job->run_subtask(std::make_shared<grep_task>(job, job->start_path));
+    job->run_subtask(std::make_unique<grep_task>(job, job->start_path));
 }
 
 
@@ -33,14 +33,14 @@ QString grep_job::grepped_file::to_string() {
 QString grep_job::patch_result() {
     std::lock_guard<std::mutex> lg(res);
     QString ans;
-    while(peek < result.size()){
+    while(peek < result.size() && ans.size() < patch_limit){
         ans.append(result[peek++].to_string());
     }
     return ans;
 }
 
-void grep_job::append_result(std::vector<grepped_file> current_result) {
-    if(result.size() > result_limit) {
+void grep_job::append_result(const std::vector<grepped_file>& current_result) {
+    if(result.size() + current_result.size() > result_limit || is_shutdown()) {
         stop();
         qDebug() << "ERROR: LARGE ANSWER";
         throw std::runtime_error("Too large result");
@@ -63,7 +63,7 @@ void grep_job::grep_task::execute() {
     }
     QDir dir(path);
     if (dir.exists()) {
-        std::vector<std::shared_ptr<abstract_task>> subfolders;
+        std::vector<std::unique_ptr<abstract_task>> subfolders;
         QDirIterator directories(path, QDir::Dirs
                                      | QDir::Files
                                      | QDir::NoSymLinks
@@ -73,12 +73,12 @@ void grep_job::grep_task::execute() {
         while(directories.hasNext()){
             if(job->is_shutdown()) return;
             directories.next();
-            subfolders.push_back(std::make_shared<grep_task>(job, directories.filePath()));
+            subfolders.push_back(std::move(std::make_unique<grep_task>(job, directories.filePath())));
         }
         {
             std::lock_guard<std::mutex> lg(job->res);
             if(job->is_shutdown()) return;
-            job->run_subtasks(subfolders);
+            job->run_subtasks(std::move(subfolders));
         }
     } else {
         if (!QFile::exists(path)) return;

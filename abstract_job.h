@@ -15,8 +15,8 @@ public:
     void stop() { cancelled.store(true); }
     bool is_shutdown() { return cancelled || executor.is_shutdown(); }
 protected:
-    void run_subtask(std::shared_ptr<abstract_task> task) { executor.schedule(task); }
-    void run_subtasks(std::vector<std::shared_ptr<abstract_task>> task) { executor.schedule(task); }
+    void run_subtask(std::unique_ptr<abstract_task> task) { executor.schedule(std::move(task)); }
+    void run_subtasks(std::vector<std::unique_ptr<abstract_task>> task) { executor.schedule(std::move(task)); }
 
     mutable std::mutex res;
     std::atomic_bool cancelled = false;

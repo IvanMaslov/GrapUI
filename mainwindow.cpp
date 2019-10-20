@@ -27,19 +27,18 @@ MainWindow::MainWindow(QWidget *parent) :
         job.reset();
     });
 
-    timer.setInterval(100);
+    timer.setInterval(40);
     timer.start();
     connect(&timer, &QTimer::timeout, this, [this]{
+        ui->lcdNumber->display(static_cast<int>(processor.sheduled_tasks()));
+
         if(job == nullptr)
             return;
         QString responce = job->patch_result();
         if(responce.isEmpty())
             return;
-        ui->textBrowser->append(responce);
-    });
 
-    connect(&timer, &QTimer::timeout, this, [this]{
-        ui->lcdNumber->display(static_cast<int>(processor.sheduled_tasks()));
+        ui->textBrowser->append(responce);
     });
 }
 

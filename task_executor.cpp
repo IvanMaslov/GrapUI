@@ -19,7 +19,7 @@ void task_executor::start() {
                 if (is_shutdown())
                     break;
 
-                std::shared_ptr<abstract_task> argument = tasks.front();
+                std::unique_ptr<abstract_task> argument = std::move(tasks.front());
                 tasks.pop();
                 lg.unlock();
                 try {
@@ -49,17 +49,17 @@ void task_executor::finish() {
     }
 }
 
-void task_executor::schedule(std::shared_ptr<abstract_task> task) {
-    std::vector<std::shared_ptr<abstract_task>> t;
-    t.push_back(task);
-    schedule(t);
+void task_executor::schedule(std::unique_ptr<abstract_task> task) {
+    std::vector<std::unique_ptr<abstract_task>> t;
+    t.push_back(std::move(task));
+    schedule(std::move(t));
 }
 
-void task_executor::schedule(std::vector<std::shared_ptr<abstract_task>> task) {
+void task_executor::schedule(std::vector<std::unique_ptr<abstract_task>> task) {
     if(is_shutdown()) throw std::runtime_error("Too much tasks");
     std::unique_lock<std::mutex> lg(pool);
-    for (auto t : task)
-        tasks.push(t);
+    for (size_t i = 0; i < task.size(); ++i)
+        tasks.push(std::move(task[i]));
     cv.notify_all();
     if (tasks.size() > task_limit) {
         working.store(false);
