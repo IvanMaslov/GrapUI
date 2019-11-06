@@ -1,5 +1,6 @@
 #ifndef GREP_JOB_H
 #define GREP_JOB_H
+#include <settings.h>
 
 #include <abstract_job.h>
 
@@ -50,7 +51,6 @@ private:
     const QString occurency;
     const QString start_path;
 
-    std::set<QString> visited;
     std::vector<grepped_file> result;
     size_t peek = 0;
 

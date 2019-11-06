@@ -1,5 +1,6 @@
 #ifndef ABSTRACT_TASK_H
 #define ABSTRACT_TASK_H
+#include <settings.h>
 
 class abstract_task
 {

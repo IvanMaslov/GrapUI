@@ -1,0 +1,6 @@
+#ifndef SETTINGS_H
+#define SETTINGS_H
+
+#define __SECURE_IMPLEMENT_METHOD_WARNINGS__ 0
+
+#endif // SETTINGS_H

@@ -6,11 +6,38 @@ grep_job::grep_job(task_executor& te, QString path, QString occurency)
       start_path(path){}
 
 void grep_job::start() {
-    run_subtask(std::make_unique<grep_task>(std::shared_ptr<grep_job>(this), start_path));
+    static_assert (!__SECURE_IMPLEMENT_METHOD_WARNINGS__, "WARNING: Not implemented method");
 }
 
 void grep_job::start(std::shared_ptr<grep_job> job) {
-    job->run_subtask(std::make_unique<grep_task>(job, job->start_path));
+    qDebug() << "START GREP: " << job->start_path;
+    if (job->occurency.isEmpty()){
+        job->errorlog = "ERROR: search for an empty string";
+        qDebug() << "ERROR: search for an empty string)";
+        return;
+    }
+    if (!QDir(job->start_path).exists()) {
+        if (QFile::exists(job->start_path)) {
+            job->run_subtask(std::make_unique<grep_task>(job, job->start_path));
+        }
+        else {
+            job->errorlog = "ERROR: No such file or directory(" + job->start_path + ")";
+            qDebug() << "ERROR: No such file or directory(" + job->start_path + ")";
+        }
+        return;
+    }
+    std::vector<std::unique_ptr<abstract_task>> subfiles;
+    QDirIterator file(job->start_path, QDir::Files
+                                 | QDir::NoSymLinks
+                                 | QDir::NoDotAndDotDot
+                                 | QDir::Readable,
+                             QDirIterator::Subdirectories);
+    while(file.hasNext()){
+        if(job->is_shutdown()) return;
+        file.next();
+        subfiles.push_back(std::move(std::make_unique<grep_task>(job, file.filePath())));
+    }
+    job->run_subtasks(std::move(subfiles));
 }
 
 
@@ -36,6 +63,10 @@ QString grep_job::patch_result() {
     while(peek < result.size() && ans.size() < patch_limit){
         ans.append(result[peek++].to_string());
     }
+    if(!errorlog.isEmpty() && peek == result.size()){
+        ans += errorlog;
+        errorlog.clear();
+    }
     return ans;
 }
 
@@ -43,6 +74,7 @@ void grep_job::append_result(const std::vector<grepped_file>& current_result) {
     if(result.size() + current_result.size() > result_limit || is_shutdown()) {
         stop();
         qDebug() << "ERROR: LARGE ANSWER";
+        errorlog += "ERROR: LARGE ANSWER";
         throw std::runtime_error("Too large result");
     }
     for (auto i : current_result)
@@ -55,64 +87,37 @@ grep_job::grep_task::grep_task(std::shared_ptr<grep_job> job, QString path)
 grep_job::grep_task::~grep_task() {}
 
 void grep_job::grep_task::execute() {
-    {
-        std::lock_guard<std::mutex> lg(job->res);
-        if (job->is_shutdown()) return;
-        if (job->visited.find(path) != job->visited.end()) return;
-        job->visited.insert(path);
-    }
-    QDir dir(path);
-    if (dir.exists()) {
-        std::vector<std::unique_ptr<abstract_task>> subfolders;
-        QDirIterator directories(path, QDir::Dirs
-                                     | QDir::Files
-                                     | QDir::NoSymLinks
-                                     | QDir::NoDotAndDotDot
-                                     | QDir::Readable,
-                                 QDirIterator::Subdirectories);
-        while(directories.hasNext()){
+    if (!QFile::exists(path)) return;
+    std::vector<grepped_file> current_result;
+    QFile file(path);
+    file.open(QFile::ReadOnly | QFile::Text);
+    for (size_t line = 0; !file.atEnd(); ++line) {
+        if(job->is_shutdown()) return;
+        QByteArray bytes = file.readLine();
+        int pos = 0;
+        while (pos != -1) {
             if(job->is_shutdown()) return;
-            directories.next();
-            subfolders.push_back(std::move(std::make_unique<grep_task>(job, directories.filePath())));
-        }
-        {
-            std::lock_guard<std::mutex> lg(job->res);
-            if(job->is_shutdown()) return;
-            job->run_subtasks(std::move(subfolders));
-        }
-    } else {
-        if (!QFile::exists(path)) return;
-        std::vector<grepped_file> current_result;
-        QFile file(path);
-        file.open(QFile::ReadOnly | QFile::Text);
-        for (size_t line = 0; !file.atEnd(); ++line) {
-            if(job->is_shutdown()) return;
-            QByteArray bytes = file.readLine();
-            int pos = 0;
-            while (pos != -1) {
-                if(job->is_shutdown()) return;
-                pos = bytes.indexOf(job->occurency, pos);
-                if (pos != -1) {
-                    QByteArray::size_type occurency_from = pos < grepped_file::appendix_size
-                            ? 0
-                            : pos - grepped_file::appendix_size;
-                    QByteArray::size_type occurency_to = pos + grepped_file::appendix_size + job->occurency.length() > bytes.length()
-                            ? bytes.length()
-                            : pos + grepped_file::appendix_size + job->occurency.length();
-                    current_result.push_back(grepped_file(
-                                                 path,
-                                                 line,
-                                                 static_cast<size_t>(pos),
-                                                 bytes.mid(occurency_from, occurency_to - occurency_from)
-                                                 ));
-                    pos += job->occurency.size();
-                }
+            pos = bytes.indexOf(job->occurency, pos);
+            if (pos != -1) {
+                QByteArray::size_type occurency_from = pos < grepped_file::appendix_size
+                        ? 0
+                        : pos - grepped_file::appendix_size;
+                QByteArray::size_type occurency_to = pos + grepped_file::appendix_size + job->occurency.length() > bytes.length()
+                        ? bytes.length()
+                        : pos + grepped_file::appendix_size + job->occurency.length();
+                current_result.push_back(grepped_file(
+                                             path,
+                                             line,
+                                             static_cast<size_t>(pos),
+                                             bytes.mid(occurency_from, occurency_to - occurency_from)
+                                             ));
+                pos += job->occurency.size();
             }
         }
-        {
-            std::lock_guard<std::mutex> lg(job->res);
-            if(job->is_shutdown()) return;
-            job->append_result(current_result);
-        }
+    }
+    {
+        std::lock_guard<std::mutex> lg(job->res);
+        if(job->is_shutdown()) return;
+        job->append_result(current_result);
     }
 }

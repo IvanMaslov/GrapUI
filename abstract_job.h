@@ -1,5 +1,6 @@
 #ifndef ABSTRACT_JOB_H
 #define ABSTRACT_JOB_H
+#include <settings.h>
 
 #include <atomic>
 #include <mutex>
@@ -20,6 +21,8 @@ protected:
 
     mutable std::mutex res;
     std::atomic_bool cancelled = false;
+
+    QString errorlog;
 private:
     task_executor& executor;
 };

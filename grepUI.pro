@@ -35,7 +35,8 @@ HEADERS += \
     abstract_task.h \
     abstract_job.h \
     task_executor.h \
-    grep_job.h
+    grep_job.h \
+    settings.h
 
 FORMS += \
         mainwindow.ui

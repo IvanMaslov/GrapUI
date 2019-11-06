@@ -1,5 +1,6 @@
 #ifndef BACKGROUND_JOB_H
 #define BACKGROUND_JOB_H
+#include <settings.h>
 
 #include <QObject>
 #include <QDebug>
