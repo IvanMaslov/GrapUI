@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+
 #include "task_executor.h"
 #include "grep_job.h"
 

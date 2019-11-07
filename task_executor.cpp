@@ -56,7 +56,7 @@ void task_executor::schedule(std::unique_ptr<abstract_task> task) {
 }
 
 void task_executor::schedule(std::vector<std::unique_ptr<abstract_task>> task) {
-    if(is_shutdown()) throw std::runtime_error("Too much tasks");
+    if(is_shutdown()) throw task_error("Too much tasks");
     std::unique_lock<std::mutex> lg(pool);
     for (size_t i = 0; i < task.size(); ++i)
         tasks.push(std::move(task[i]));
@@ -64,6 +64,6 @@ void task_executor::schedule(std::vector<std::unique_ptr<abstract_task>> task) {
     if (tasks.size() > task_limit) {
         working.store(false);
         qDebug() << "ERROR: shedule";
-        throw std::runtime_error("Too much tasks");
+        throw task_error("Too much tasks");
     }
 }

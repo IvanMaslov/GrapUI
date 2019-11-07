@@ -11,6 +11,16 @@
 
 class grep_job : public abstract_job
 {
+    class init_task : public abstract_task
+    {
+    private:
+        std::shared_ptr<grep_job> job;
+    public:
+        init_task(std::shared_ptr<grep_job>);
+        ~init_task() override;
+        void execute() override;
+    };
+
 public:
     class grep_task : public abstract_task
     {

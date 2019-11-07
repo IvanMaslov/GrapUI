@@ -10,6 +10,16 @@ void grep_job::start() {
 }
 
 void grep_job::start(std::shared_ptr<grep_job> job) {
+    job->run_subtask(std::make_unique<init_task>(job));
+}
+
+grep_job::init_task::init_task(std::shared_ptr<grep_job> job)
+    :job(job){}
+
+grep_job::init_task::~init_task() {}
+
+void grep_job::init_task::execute() {
+    if(job->is_shutdown()) return;
     qDebug() << "START GREP: " << job->start_path;
     if (job->occurency.isEmpty()){
         job->errorlog = "ERROR: search for an empty string";
@@ -18,6 +28,7 @@ void grep_job::start(std::shared_ptr<grep_job> job) {
     }
     if (!QDir(job->start_path).exists()) {
         if (QFile::exists(job->start_path)) {
+            if(job->is_shutdown()) return;
             job->run_subtask(std::make_unique<grep_task>(job, job->start_path));
         }
         else {
@@ -37,6 +48,7 @@ void grep_job::start(std::shared_ptr<grep_job> job) {
         file.next();
         subfiles.push_back(std::move(std::make_unique<grep_task>(job, file.filePath())));
     }
+    if(job->is_shutdown()) return;
     job->run_subtasks(std::move(subfiles));
 }
 
@@ -75,7 +87,7 @@ void grep_job::append_result(const std::vector<grepped_file>& current_result) {
         stop();
         qDebug() << "ERROR: LARGE ANSWER";
         errorlog += "ERROR: LARGE ANSWER";
-        throw std::runtime_error("Too large result");
+        throw task_error("Too large result");
     }
     for (auto i : current_result)
         result.push_back(i);

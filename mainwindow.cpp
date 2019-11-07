@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
         job = std::make_shared<grep_job>(processor, ui->lineEdit->text(), ui->lineEdit_2->text());
         try {
             grep_job::start(job);
-        } catch (const std::runtime_error& e) {
+        } catch (const task_error& e) {
             if(processor.is_shutdown()) processor.restart();
         }
     });

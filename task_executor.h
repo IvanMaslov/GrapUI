@@ -32,7 +32,7 @@ private:
     void finish();
 
     static const size_t thread_count = 3;
-    static const size_t task_limit = 900000;
+    static const size_t task_limit = thread_count * 300000;
 
     std::unique_ptr<std::thread> executors[thread_count];
 
