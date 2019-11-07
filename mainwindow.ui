@@ -15,6 +15,37 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="3" alignment="Qt::AlignLeft">
+     <widget class="QLCDNumber" name="lcdNumber"/>
+    </item>
+    <item row="0" column="0" colspan="4">
+     <widget class="QLineEdit" name="lineEdit">
+      <property name="text">
+       <string>File or directory</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="4">
+     <widget class="QLineEdit" name="lineEdit_2">
+      <property name="text">
+       <string>Search text</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2" alignment="Qt::AlignRight">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Current tasks:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="text">
+       <string>Cancel</string>
+      </property>
+     </widget>
+    </item>
     <item row="2" column="0">
      <widget class="QPushButton" name="pushButton">
       <property name="text">
@@ -22,7 +53,7 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0" colspan="5">
+    <item row="3" column="0" colspan="4">
      <widget class="QTextBrowser" name="textBrowser">
       <property name="html">
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -33,50 +64,29 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </item>
-    <item row="2" column="4" alignment="Qt::AlignLeft">
-     <widget class="QLCDNumber" name="lcdNumber"/>
-    </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="pushButton_2">
-      <property name="text">
-       <string>Cancel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="5">
-     <widget class="QLineEdit" name="lineEdit_2"/>
-    </item>
-    <item row="0" column="0" colspan="5">
-     <widget class="QLineEdit" name="lineEdit"/>
-    </item>
-    <item row="2" column="3" alignment="Qt::AlignRight">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Current tasks:</string>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>963</width>
-     <height>24</height>
-    </rect>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
    </property>
-  </widget>
-  <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>false</bool>
+    <bool>true</bool>
    </attribute>
+   <addaction name="actionScanDir"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionScanDir">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>ScanDir</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

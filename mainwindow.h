@@ -20,6 +20,9 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void select_dir();
+
 private:
     Ui::MainWindow *ui;
     task_executor processor;

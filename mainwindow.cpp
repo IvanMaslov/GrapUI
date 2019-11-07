@@ -1,11 +1,18 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QFileDialog>
+#include <QCommonStyle>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    QCommonStyle style;
+    ui->actionScanDir->setIcon(style.standardIcon(QCommonStyle::SP_DialogOpenButton));
+    connect(ui->actionScanDir, &QAction::triggered, this, &MainWindow::select_dir);
 
     connect(ui->pushButton, &QPushButton::clicked, this, [this] {
         if(job != nullptr) job->stop();
@@ -45,4 +52,9 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::select_dir() {
+    ui->lineEdit->setText(QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
+                                                    QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
 }
