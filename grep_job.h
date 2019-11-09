@@ -7,7 +7,9 @@
 #include <set>
 #include <QDir>
 #include <QDirIterator>
+#include <QFileInfo>
 #include <QDebug>
+
 
 class grep_job : public abstract_job
 {

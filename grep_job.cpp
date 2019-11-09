@@ -99,7 +99,12 @@ grep_job::grep_task::grep_task(std::shared_ptr<grep_job> job, QString path)
 grep_job::grep_task::~grep_task() {}
 
 void grep_job::grep_task::execute() {
-    if (!QFile::exists(path)) return;
+    QFileInfo info(path);
+    if (!QFile::exists(path)
+            || info.isExecutable()
+            || info.isDir()
+            || !info.isReadable())
+        return;
     std::vector<grepped_file> current_result;
     QFile file(path);
     file.open(QFile::ReadOnly | QFile::Text);

@@ -56,5 +56,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::select_dir() {
     ui->lineEdit->setText(QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
-                                                    QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
+                                                    QString(), QFileDialog::ShowDirsOnly
+                                                            | QFileDialog::ReadOnly
+                                                            | QFileDialog::DontResolveSymlinks));
 }
