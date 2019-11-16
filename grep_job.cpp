@@ -63,6 +63,7 @@ grep_job::grepped_file::grepped_file(QString file,
     occurency(occurency){}
 
 QString grep_job::grepped_file::to_string() {
+    return file + "::" + QString::number(line) + ":" + QString::number(pos) + "\n";
     return file + "::"
             + QString::number(line) + ":"
             + QString::number(pos) + "\n...\n"

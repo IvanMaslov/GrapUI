@@ -45,7 +45,8 @@ MainWindow::MainWindow(QWidget *parent) :
         if(responce.isEmpty())
             return;
 
-        ui->textBrowser->append(responce);
+        //ui->textBrowser->append(responce);
+        ui->textBrowser->insertPlainText(responce);
     });
 }
 

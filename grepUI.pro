@@ -41,6 +41,9 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
+QMAKE_CXXFLAGS_DEBUG += -fsanitaze=address,undefined
+QMAKE_LFLAGS_DEBUG += -fsanitaze=address,undefined
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
